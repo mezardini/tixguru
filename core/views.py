@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 import requests
 import json
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
@@ -111,6 +112,7 @@ def profile(request, slug):
     context = {'profilex':profilex, 'events':events, 'tickets':tickets, 'sum_total':sum_total, 'sum_totalx':sum_totalx}
     return render(request, 'profile.html', context)
 
+@login_required(login_url='signin')
 def create_event(request):
     if request.method == 'POST':
         images = request.FILES.getlist('images')
@@ -270,6 +272,12 @@ def signin(request):
 def signout(request):
     logout(request)
     return redirect('signin') 
+
+def error_404_view(request, exception):
+   
+    # we add the path to the the 404.html file
+    # here. The name of our HTML file is 404.html
+    return render(request, '404.html')
 
 def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
      auth_token= env('SECRET_KEY')

@@ -113,8 +113,8 @@ https://templatemo.com/tm-579-cyborg-gaming
                     <ul>
                       <li>Events <span>{{events.count}}</span></li>
                       <li>Total tickets sold <span>{{tickets.count}}</span></li>
-                      <li>Live Streams <span>{{sum_total}}</span></li>
-                      <li>Clips <span>{{sum_totalx}}</span></li>
+                      <!-- <li>Live Streams <span>{{sum_total}}</span></li> -->
+                      <li>Events <span>{{sum_totalx}}</span></li>
                     
 
                     </ul>
@@ -137,9 +137,13 @@ https://templatemo.com/tm-579-cyborg-gaming
                               
                             </div>
                             <div class="down-content">
+                              {% if request.user == profilex %}
                                 <a href="{% url 'adminview' event.slug %}"><h4>{{event.title}}</h4></a>
-                              <h4>{{sum_totalx}}</h4>                                                           
-                              <span><i class="fa fa-eye"></i> {{event.ticket_price}}</span>
+                                {% else %}
+                                <a href="{% url 'details' event.slug %}"><h4>{{event.title}}</h4></a>
+                                {% endif %}
+                                                                                        
+                              <span><i class="fa fa-money-bill"></i> {{event.ticket_price}}</span>
                             </div>
                           </div>
                         </div>
