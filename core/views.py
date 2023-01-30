@@ -3,7 +3,7 @@ import requests
 import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User, auth
+from django.contrib.auth.models import User, auth, Group
 from django.contrib import messages
 from .models import Event, Review, Category, Bookmark, Organizer, Media, Ticket
 import random
@@ -27,9 +27,10 @@ environ.Env.read_env()
 # Create your views here.
 def index(request):
     events = Event.objects.all()
-    
+    users_in_group = Group.objects.get(name="Organizers").user_set.all()
+    organizer = Organizer.objects.all()
 
-    context = {'events':events}
+    context = {'events':events, 'organizer':organizer, 'users_in_group':users_in_group}
     return render(request, 'main.html', context)
 
 def browse(request):
@@ -212,6 +213,8 @@ def organizer(request):
             slug = slugify(request.POST['biz_name']),
         )
         org.save()
+        user_group = Group.objects.get(name="Organizers")
+        org.groups.add(user_group)
         return redirect('profile', slug=org.slug)
     return render(request, 'org_create.html')
 
@@ -248,6 +251,7 @@ def signup(request):
 
 def signin(request):
     if request.method == 'POST':
+        organizer = Organizer.objects.all()
         email = request.POST.get('email')
         password = request.POST['password']
 
@@ -261,9 +265,11 @@ def signin(request):
 
         user = auth.authenticate(request, username=email, password=password)
 
-        if user is not None:
+        if user is not None and user is organizer:
             auth.login(request, user)
             return redirect('index')
+        elif user is not None and user is not organizer:
+            return redirect('organizer')
         else:
             messages.error(request, "Incorrect username or password.")
             return render(request, 'login.html')

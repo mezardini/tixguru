@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <title>Tixvana - Ticketing made easy</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'static/assets/images/favicon.png' %}">
+  
 
     <!-- Bootstrap core CSS -->
     <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -70,8 +72,10 @@ https://templatemo.com/tm-579-cyborg-gaming
                         <li><a href="browse.html">Browse</a></li>
                         <li><a href="details.html">Details</a></li>
                         <li><a href="streams.html">Streams</a></li>
-                        {% if request.user.is_authenticated %}
+                        {% if  request.user.is_authenticated and request.user in users_in_group  %}
                         <li><a href="{% url 'profile' user.organizer.slug %}">{{user.first_name}} {{user.last_name}} <img src="{% static 'assets/images/profile-header.jpg' %}" alt=""></a></li>
+                        {% elif request.user.is_authenticated  %}
+                         <li> <a href="{% url 'organizer' %}">{{user.first_name}} {{user.last_name}} <img src="{% static 'assets/images/profile-header.jpg' %}" alt=""></a></li>
                         {% else %}
                         <li><a href="{% url 'signin' %}">Sign Up <img src="{% static 'assets/images/profile-header.jpg' %}" alt=""></a></li>
                         {% endif %}

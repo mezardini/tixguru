@@ -27,7 +27,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 
-# # SECURITY WARNING: don't run with debug turned on in production
+# # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
+
+# ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -140,8 +143,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR , 'static'
+    BASE_DIR / 'static'
 ]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(
     BASE_DIR / 'media'
@@ -161,6 +165,8 @@ AUTHENTICATION_BACKENDS = [
 
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_LOGIN_ON_GET=True
 
 # Additional configuration settings
 SOCIALACCOUNT_QUERY_EMAIL = True
@@ -193,3 +199,35 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'mysite.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers':['file'],
+            'propagate': True,
+            'level':'DEBUG',
+        },
+        'MYAPP': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+}
