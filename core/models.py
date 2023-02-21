@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify  
 from django.urls import reverse
-
+from hitcount.models import HitCountMixin, HitCount
+from django.contrib.contenttypes.fields import GenericRelation
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -10,7 +11,14 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class IpModel(models.Model):
+    ip = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.ip
+
 class Organizer(models.Model):
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20)
     biz_name = models.CharField(max_length=1000,null=True)
@@ -45,9 +53,14 @@ class Event(models.Model):
     poster = models.ImageField(null=True, blank=False, upload_to='media')
     ticket_price = models.FloatField(null=True)
     tickets_ava  = models.IntegerField(blank=True, null=True)
+    hit_count_generic = GenericRelation(HitCount, object_id_field='object_pk',
+     related_query_name='hit_count_generic_relation')
+    views = models.IntegerField(default=0)
+
     slug = models.SlugField(max_length=500, null=False, unique=True)
     # earnings = models.FloatField(null=True)
 
+    
     def earnings(self):
         return self.Ticket * self.ticket_price
     class Meta:
@@ -74,7 +87,6 @@ class Ticket(models.Model):
 class Media(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     photos = models.ImageField(null=True, blank=False, upload_to='media')
-    video = models.FileField(upload_to='media', default='pictures/video.mp4')
 
     def __str__(self):
         return self.event.title 
@@ -89,11 +101,11 @@ class Review(models.Model):
         return self.event.title +  "; " + self.comment
 
 class Bookmark(models.Model):
-    event = models.ManyToManyField(Event)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.user.username
+        return self.event.title
 
 class CustomerInfo(models.Model):
     full_name= models.CharField(max_length  = 150)

@@ -16,10 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+
 urlpatterns = [
     path('ajibaba/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
-    path('', include('core.urls'))
+    path('', include('core.urls')),
 ]
 
 

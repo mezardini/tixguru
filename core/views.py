@@ -18,7 +18,9 @@ from sendgrid.helpers.mail import Mail
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 import environ
-from .forms import EventForm
+from .forms import EventForm, OrgForm
+from django.views.generic.list import ListView
+from hitcount.views import HitCountDetailView
 # Initialise environment variables
 env = environ.Env()
 environ.Env.read_env()
@@ -31,7 +33,7 @@ def index(request):
     organizer = Organizer.objects.all()
 
     context = {'events':events, 'organizer':organizer, 'users_in_group':users_in_group}
-    return render(request, 'main.html', context)
+    return render(request, 'home.html', context)
 
 def browse(request):
     events = Event.objects.all()
@@ -39,8 +41,42 @@ def browse(request):
     context = {'events':events}
     return render(request, 'browse.html', context)
 
+def search_event(request):
+    room = Event.objects.all()
+    if request.method == 'GET':
+        searched = request.GET['search_term']
+        topics = Event.objects.filter(title__contains = searched)
+        return render(request, 'search_event.html', {'searched':searched, 'room':room, 'topics':topics})
+
+    context = {'room':room,  'topics':topics}
+    return render(request, 'search_event.html', context)
+
+def terms(request):
+
+    return render(request, 'terms.html')
+
+def contact(request):
+
+    if request.method == 'POST':
+
+        sender = request.POST['name']
+        email = request.POST['email']
+        message = request.POST['message']
+
+        send_mail(
+            'Message from '+ email + " " + sender,
+            message,
+            'settings.EMAIL_HOST_USER',
+            ['mezardini@gmail.com'],
+            fail_silently=False,
+        )
+
+    return redirect('index')
+
 def details(request, slug):
     event = Event.objects.get(slug=slug)
+    event.views=event.views+1
+    event.save()
     organizer = Organizer.objects.all()
     media = event.media_set.all()
     review = event.review_set.all()
@@ -55,18 +91,21 @@ def details(request, slug):
         return redirect('details', slug=event.slug)
 
     context = {'event':event, 'media':media, 'review':review, 'ticket':ticket, 'organizer':organizer}
-    return render(request, 'event.html', context)
+    return render(request, 'eventx.html', context)
 
 def admin_details(request, slug):
     event = Event.objects.get(slug=slug)
     tickets = event.ticket_set.all()
+    x = tickets.count()
+    sold = event.tickets_ava
+    left = "{:0.2f}".format(x/sold * 100)
     form = EventForm(request.POST or None, instance=event)
     if form.is_valid():
         form.save()
          
 
-    context = {'event':event, 'tickets':tickets, 'form':form}
-    return render(request, 'adminview.html', context)
+    context = {'event':event, 'tickets':tickets, 'form':form, 'left':left}
+    return render(request, 'eventadmin.html', context)
 
 def delete_event(request, slug):
     event = Event.objects.get(slug=slug)
@@ -82,8 +121,11 @@ def profile(request, slug):
     profilex = Organizer.objects.get(slug=slug)
     events = Event.objects.filter(creator=profilex)
     tickets = Ticket.objects.filter(event__creator=profilex)
-    sum_totalx  = events.count()
+    sum_totalx  = tickets.count()
     sum_total =  sum(events.values_list('ticket_price', flat=True))
+    ticket_sold = events.count()
+    avg_price = sum_total/ticket_sold
+    form = OrgForm(request.POST or None, instance=profilex)
 
     if request.method == 'POST':
         account_number = request.POST.get('phone')
@@ -101,17 +143,12 @@ def profile(request, slug):
         )
         
         org.save()
-        rave = Rave(os.getenv("FLW_PUBLIC_KEY"), os.getenv("FLW_SECRET_KEY"))
-        details = {
-          "account_number": account_number,
-          "account_bank": bank
-        }
-        response = rave.Transfer.accountResolve(details)
-        context = {'response':response}
-        return redirect('profile', context)
+       
+    if form.is_valid():
+        form.save()
 
-    context = {'profilex':profilex, 'events':events, 'tickets':tickets, 'sum_total':sum_total, 'sum_totalx':sum_totalx}
-    return render(request, 'profile.html', context)
+    context = {'profilex':profilex, 'events':events, 'tickets':tickets, 'sum_total':sum_total, 'sum_totalx':sum_totalx, 'form':form, 'ticket_sold':ticket_sold, 'avg_price':avg_price}
+    return render(request, 'admin.html', context)
 
 @login_required(login_url='signin')
 def create_event(request):
@@ -152,16 +189,20 @@ def create_event(request):
         return redirect('details', slug=eventcreate.slug)
 
     context = {}
-    return render(request, 'org.html', context)
+    return render(request, 'create_event.html', context)
 
-def sendmail(request, slug):
+def makepayment(request, slug):
     global eventx
     eventx = Event.objects.get(slug=slug)
+    pricex = "{:.0f}".format(eventx.ticket_price)
+    qprice = int(eventx.ticket_price*100)
+    price = "{:.0f}".format(qprice) 
     byte = random.randint(1000,1239)
     # global tix_code
     # tix_code = "#" + str(eventx.id) + "-" + str(random.randint(1000,123999999))
     global tix_mail
     tix_mail = request.POST.get('customer[email]')
+    ref = ''+str((1000 + random.random()*900))
     # tix_name = request.POST.get('customer[name]')
     # tix_phone = request.POST.get('phone')
     if request.method == 'POST':
@@ -181,23 +222,34 @@ def sendmail(request, slug):
             ticket_price = request.POST.get('price'),
         )
         tix.save()
-        return redirect(str(process_payment(tix_name,tix_mail,ticket_price,tix_phone)))
+        
+        # return redirect(str(process_payment(tix_name,tix_mail,ticket_price,tix_phone)))
 
-    context = {'event':eventx, 'byte':byte}
-    return render(request,'pay.html', context)
+    context = {'event':eventx, 'byte':byte, 'ref':ref, 'price':price, 'pricex':pricex}
+    return render(request,'payx.html', context)
 
 def bookmark(request, pk):
     eventx = Event.objects.get(slug=pk)
     
     
     tix = Bookmark.objects.create(
-            
+            event= eventx,
             user = request.user,  
         )
     tix.save()
     tix.event.add(eventx)
         
     return redirect('details', slug=eventx.slug)
+
+def bookmarklist(request, pk):
+    event = User.objects.get(id=pk)
+    events = Event.objects.all
+    bookmarks = Bookmark.objects.filter(user=event)
+    
+
+    context = {'bookmarks':bookmarks}
+    return render(request, 'bookmarks.html', context)
+
     
 def organizer(request):
     if request.method == 'POST':
@@ -273,7 +325,7 @@ def signin(request):
         else:
             messages.error(request, "Incorrect username or password.")
             return render(request, 'login.html')
-    return render(request, 'signin.html')
+    return render(request, 'signinx.html')
 
 def signout(request):
     logout(request)
@@ -281,41 +333,41 @@ def signout(request):
 
 def error_404_view(request, exception):
    
-    # we add the path to the the 404.html file
+    # we add the path to the 404.html file
     # here. The name of our HTML file is 404.html
     return render(request, '404.html')
 
-def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
-     auth_token= env('SECRET_KEY')
-     hed = {'Authorization': 'Bearer ' + auth_token}
-     data = {
-                "tx_ref":''+str((1000 + random.random()*900)),
-                "amount":ticket_price,
-                "currency":"NGN",
-                "redirect_url":"http://localhost:8000/callback",
-                "payment_options":"card",
-                "meta":{
-                    "consumer_id":23,
-                    "consumer_mac":"92a3-912ba-1192a"
-                },
-                "customer":{
-                    "email":tix_mail,
-                    "phonenumber":tix_phone,
-                    "name":tix_name
-                },
-                "customizations":{
-                    "title":"Supa Electronics Store",
-                    "description":"Best store in town",
-                    "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
-                }
-                }
-     url = ' https://api.flutterwave.com/v3/payments'
-     response = requests.post(url, json=data, headers=hed)
-     response=response.json()
-     link=response['data']['link']
-    #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
-    #  receiver = tix_mail
-     return link
+# def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
+#      auth_token= env('SECRET_KEY')
+#      hed = {'Authorization': 'Bearer ' + auth_token}
+#      data = {
+#                 "tx_ref":''+str((1000 + random.random()*900)),
+#                 "amount":ticket_price,
+#                 "currency":"NGN",
+#                 "redirect_url":"http://localhost:8000/callback",
+#                 "payment_options":"card",
+#                 "meta":{
+#                     "consumer_id":23,
+#                     "consumer_mac":"92a3-912ba-1192a"
+#                 },
+#                 "customer":{
+#                     "email":tix_mail,
+#                     "phonenumber":tix_phone,
+#                     "name":tix_name
+#                 },
+#                 "customizations":{
+#                     "title":"Tixvana",
+#                     "description":"Best store in town",
+#                     "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
+#                 }
+#                 }
+#      url = ' https://api.flutterwave.com/v3/payments'
+#      response = requests.post(url, json=data, headers=hed)
+#      response=response.json()
+#      link=response['data']['link']
+#     #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
+#     #  receiver = tix_mail
+#      return link
     
 
 @require_http_methods(['GET', 'POST'])
