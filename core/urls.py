@@ -20,7 +20,7 @@ urlpatterns = [
     path('signout', views.signout, name='signout'),
     path('makepayment/<str:slug>', views.makepayment, name='makepayment'),
     path('adminview/<str:slug>', views.admin_details, name='adminview'),
-    path('profile/<str:slug>', views.profile, name='profile'),
+    path('organizer/<str:slug>', views.profile, name='profile'),
     path('deleteevent/<str:slug>', views.delete_event, name='deleteevent'),
     path('callback', views.payment_response, name='payment_response'),
     

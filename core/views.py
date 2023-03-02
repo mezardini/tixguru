@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse, get_object_or_404
 import requests
 import json
 from django.contrib.auth.decorators import login_required
@@ -110,21 +110,26 @@ def admin_details(request, slug):
 def delete_event(request, slug):
     event = Event.objects.get(slug=slug)
 
-
     if request.method == 'POST':
         event.delete()
         return redirect('index')
     
     context = {'event':event}
     return render(request, 'delete.html', context)
+    
+
 def profile(request, slug):
     profilex = Organizer.objects.get(slug=slug)
     events = Event.objects.filter(creator=profilex)
+    eventsz = Event.objects.all()
     tickets = Ticket.objects.filter(event__creator=profilex)
     sum_totalx  = tickets.count()
-    sum_total =  sum(events.values_list('ticket_price', flat=True))
+    sum_total =  sum(tickets.values_list('ticket_price', flat=True))
     ticket_sold = events.count()
     avg_price = sum_total/ticket_sold
+    # earnings of organizer, get the price of tickets sold for an event and then add all events for an organizer
+
+
     form = OrgForm(request.POST or None, instance=profilex)
 
     if request.method == 'POST':
@@ -147,7 +152,7 @@ def profile(request, slug):
     if form.is_valid():
         form.save()
 
-    context = {'profilex':profilex, 'events':events, 'tickets':tickets, 'sum_total':sum_total, 'sum_totalx':sum_totalx, 'form':form, 'ticket_sold':ticket_sold, 'avg_price':avg_price}
+    context = {'profilex':profilex, 'events':events, 'tickets':tickets, 'sum_total':sum_total, 'sum_totalx':sum_totalx, 'form':form, 'ticket_sold':ticket_sold}
     return render(request, 'admin.html', context)
 
 @login_required(login_url='signin')
@@ -261,7 +266,6 @@ def organizer(request):
             bank = request.POST.get('bank'),
             poster = request.FILES.get('image'),
             biz_name = request.POST.get('biz_name'),
-            bio = request.POST.get('bio'),
             slug = slugify(request.POST['biz_name']),
         )
         org.save()

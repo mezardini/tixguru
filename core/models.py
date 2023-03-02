@@ -26,8 +26,6 @@ class Organizer(models.Model):
     account_number = models.IntegerField(null=True)
     account_name = models.CharField(max_length=200,null=True)
     bank = models.CharField(max_length=200,null=True)
-    poster = models.ImageField(upload_to='media',null=True)
-    bio = models.TextField(null=True)
 
     def __str__(self):
         return self.user.first_name + " " + self.user.last_name

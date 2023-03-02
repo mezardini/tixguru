@@ -11,4 +11,4 @@ class OrgForm(ModelForm):
     class Meta:
         model = Organizer
         fields = '__all__'
-        exclude = ['user', 'poster', 'account_name', 'account_number', 'bank', 'slug']
+        exclude = ['user',  'account_name', 'account_number', 'bank', 'slug']
