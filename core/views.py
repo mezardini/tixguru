@@ -12,6 +12,7 @@ from django.template.defaultfilters import slugify
 from django.core.mail import EmailMessage
 from django.core.mail import send_mail
 from django.core import mail
+from datetime import datetime
 from django.conf import settings
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -97,14 +98,24 @@ def admin_details(request, slug):
     event = Event.objects.get(slug=slug)
     tickets = event.ticket_set.all()
     x = tickets.count()
+    y = event.ticket_price
     sold = event.tickets_ava
     left = "{:0.2f}".format(x/sold * 100)
+    res =  x*y
+    ava = sold-x
+    sum_total = '{:,}'.format(res)
+    event_date = event.date.date()
+    present = datetime.now().date()
+    # d1 = datetime.datetime.strptime(event_date, "%m/%d/%Y").date()
+    # date_check = datetime(event_date) < present
+
     form = EventForm(request.POST or None, instance=event)
     if form.is_valid():
         form.save()
          
 
-    context = {'event':event, 'tickets':tickets, 'form':form, 'left':left}
+    context = {'event':event, 'tickets':tickets, 'form':form, 'left':left, 'sum_total':sum_total, 
+               'ava':ava, 'date': event_date, 'present':present}
     return render(request, 'eventadmin.html', context)
 
 def delete_event(request, slug):
