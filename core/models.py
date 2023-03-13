@@ -18,14 +18,61 @@ class IpModel(models.Model):
         return self.ip
 
 class Organizer(models.Model):
-    
+    Access_Bank    = '044'
+    Citibank    = '023'
+    Ecobank    = '050'
+    FCMB    = '214'
+    Fidelity    = '070'
+    First_Bank    = '011'
+    GTB    = '058'
+    Heritage    = '030'
+    Jaiz_Bank    = '301'
+    Keystone    = '082'
+    Parallex    = '526'
+    Providus    = '101'
+    Stanbic     = '221'
+    Skye_Bank    = '076'
+    Standard_Bank    = '068'
+    Sterling_Bank    = '232'
+    Suntrust_Bank    = '100'
+    Titan_Trust    = '102'
+    Union_Bank    = '032'
+    United_Bank    = '033'
+    Unity_Bank    = '215'
+    Wema_Bank    = '035'
+    Zenith_Bank   = '057'
+    Code = [
+            (Access_Bank  ,    (Access_Bank)),     
+            (Citibank  ,    (Citibank)) , 
+            (Ecobank    ,    (Ecobank)),   
+            (FCMB     ,    (FCMB))  ,   
+            (Fidelity  ,    (Fidelity)),  
+            (First_Bank,    (First_Bank)), 
+            (GTB  ,    (GTB)), 
+            (Heritage  ,    (Heritage)) , 
+            (Jaiz_Bank,    (Jaiz_Bank)), 
+            (Keystone ,    (Keystone)), 
+            (Parallex ,    (Parallex)), 
+            (Providus ,    (Providus)), 
+            (Stanbic  ,    (Stanbic )), 
+            (Skye_Bank,    (Skye_Bank)), 
+            (Standard_Bank,    (Standard_Bank)), 
+            (Sterling_Bank,    (Sterling_Bank)), 
+            (Suntrust_Bank,    (Suntrust_Bank)), 
+            (Titan_Trust  ,    (Titan_Trust)), 
+            (Union_Bank,    (Union_Bank)),
+            (United_Bank  ,    (United_Bank)), 
+            (Unity_Bank,    (Unity_Bank)),
+            (Wema_Bank,    (Wema_Bank)),
+            (Zenith_Bank  ,    (Zenith_Bank)), 
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20)
     biz_name = models.CharField(max_length=1000,null=True)
     slug = models.SlugField(max_length=500, null=False, unique=True)
     account_number = models.IntegerField(null=True)
+    bank_code = models.IntegerField(choices=Code, null=True)
     account_name = models.CharField(max_length=200,null=True)
-    bank = models.CharField(max_length=200,null=True)
 
     def __str__(self):
         return self.user.first_name + " " + self.user.last_name
@@ -36,10 +83,10 @@ class Event(models.Model):
     professional = 'Professional'
     religious = 'Religious'
     STATUS = [
-       (entertainment, ('Entertainment')),
-       (tech, ('Tech')),
-       (professional, ('Professional')),
-       (religious, ('Religious')),
+       (entertainment, ('ENtertainment')),
+       (tech, ('TEch')),
+       (professional, ('PRofessional')),
+       (religious, ('REligious')),
    ]
     title = models.CharField(max_length=500)
     venue = models.CharField(max_length=1000, null=True)

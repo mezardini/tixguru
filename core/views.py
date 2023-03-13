@@ -207,6 +207,9 @@ def create_event(request):
     context = {}
     return render(request, 'create_event.html', context)
 
+
+
+
 def makepayment(request, slug):
     global eventx
     eventx = Event.objects.get(slug=slug)
@@ -214,6 +217,22 @@ def makepayment(request, slug):
     qprice = int(eventx.ticket_price*100)
     price = "{:.0f}".format(qprice) 
     byte = random.randint(1000,1239)
+    ticket = Ticket.objects.filter(event=eventx)
+    tix_count = ticket.count
+    
+    # commission = 5
+    # if tix_count() >  10:
+    #     commission = 0
+    # elif tix_count() > 10 and tix_count() < 101:
+    #     commission = 0.05*int(eventx.ticket_price)
+    # elif tix_count() > 100 and tix_count() < 501:
+    #     commission = 0.035*int(eventx.ticket_price)
+    # elif tix_count() > 500 :
+    #     commission = 0.02*int(eventx.ticket_price)
+    
+   
+    #determine the commission of tixvana
+
     # global tix_code
     # tix_code = "#" + str(eventx.id) + "-" + str(random.randint(1000,123999999))
     global tix_mail
@@ -241,7 +260,7 @@ def makepayment(request, slug):
         
         # return redirect(str(process_payment(tix_name,tix_mail,ticket_price,tix_phone)))
 
-    context = {'event':eventx, 'byte':byte, 'ref':ref, 'price':price, 'pricex':pricex}
+    context = {'event':eventx, 'byte':byte, 'ref':ref, 'price':price, 'pricex':pricex, 'tix_count':tix_count}
     return render(request,'payx.html', context)
 
 def bookmark(request, pk):
@@ -352,37 +371,37 @@ def error_404_view(request, exception):
     # here. The name of our HTML file is 404.html
     return render(request, '404.html')
 
-# def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
-#      auth_token= env('SECRET_KEY')
-#      hed = {'Authorization': 'Bearer ' + auth_token}
-#      data = {
-#                 "tx_ref":''+str((1000 + random.random()*900)),
-#                 "amount":ticket_price,
-#                 "currency":"NGN",
-#                 "redirect_url":"http://localhost:8000/callback",
-#                 "payment_options":"card",
-#                 "meta":{
-#                     "consumer_id":23,
-#                     "consumer_mac":"92a3-912ba-1192a"
-#                 },
-#                 "customer":{
-#                     "email":tix_mail,
-#                     "phonenumber":tix_phone,
-#                     "name":tix_name
-#                 },
-#                 "customizations":{
-#                     "title":"Tixvana",
-#                     "description":"Best store in town",
-#                     "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
-#                 }
-#                 }
-#      url = ' https://api.flutterwave.com/v3/payments'
-#      response = requests.post(url, json=data, headers=hed)
-#      response=response.json()
-#      link=response['data']['link']
-#     #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
-#     #  receiver = tix_mail
-#      return link
+def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
+     auth_token= env('SECRET_KEY')
+     hed = {'Authorization': 'Bearer ' + auth_token}
+     data = {
+                "tx_ref":''+str((1000 + random.random()*900)),
+                "amount":ticket_price,
+                "currency":"NGN",
+                "redirect_url":"http://localhost:8000/callback",
+                "payment_options":"card",
+                "meta":{
+                    "consumer_id":23,
+                    "consumer_mac":"92a3-912ba-1192a"
+                },
+                "customer":{
+                    "email":tix_mail,
+                    "phonenumber":tix_phone,
+                    "name":tix_name
+                },
+                "customizations":{
+                    "title":"Tixvana",
+                    "description":"Best store in town",
+                    "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
+                }
+                }
+     url = ' https://api.flutterwave.com/v3/payments'
+     response = requests.post(url, json=data, headers=hed)
+     response=response.json()
+     link=response['data']['link']
+    #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
+    #  receiver = tix_mail
+     return link
     
 
 @require_http_methods(['GET', 'POST'])
