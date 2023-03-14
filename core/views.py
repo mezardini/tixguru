@@ -14,7 +14,6 @@ from django.core.mail import send_mail
 from django.template import loader, Template
 from django.template.loader import render_to_string
 from django.core import mail
-import jinja2
 from datetime import datetime
 from django.conf import settings
 from sendgrid import SendGridAPIClient
@@ -32,10 +31,10 @@ environ.Env.read_env()
 # Create your views here.
 def index(request):
     events = Event.objects.all()
-    users_in_group = Group.objects.get(name="Organizers").user_set.all()
-    organizer = Organizer.objects.all()
+    # users_in_group = Group.objects.get(name="Organizers").user_set.all()
+    # organizer = Organizer.objects.all(), 'organizer':organizer, 'users_in_group':users_in_group
 
-    context = {'events':events, 'organizer':organizer, 'users_in_group':users_in_group}
+    context = {'events':events}
     return render(request, 'home.html', context)
 
 def browse(request):
@@ -355,8 +354,6 @@ def signup(request):
                 return redirect('signup')
             else:
                 global user
-                template_loader = jinja2.FileSystemLoader('./')
-                template_env = jinja2.Environment(loader=template_loader)
                 html_message = loader.render_to_string(
                 'email.html',
                 {
