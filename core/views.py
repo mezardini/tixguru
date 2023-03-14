@@ -23,8 +23,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 import environ
 from .forms import EventForm, OrgForm
-from django.views.generic.list import ListView
-from hitcount.views import HitCountDetailView
+
 # Initialise environment variables
 env = environ.Env()
 environ.Env.read_env()

@@ -98,16 +98,12 @@ class Event(models.Model):
     poster = models.ImageField(null=True, blank=False, upload_to='media')
     ticket_price = models.FloatField(null=True)
     tickets_ava  = models.IntegerField(blank=True, null=True)
-    hit_count_generic = GenericRelation(HitCount, object_id_field='object_pk',
-     related_query_name='hit_count_generic_relation')
     views = models.IntegerField(default=0)
 
     slug = models.SlugField(max_length=500, null=False, unique=True)
     # earnings = models.FloatField(null=True)
 
     
-    def earnings(self):
-        return self.Ticket * self.ticket_price
     class Meta:
         ordering = [ '-created']
 
