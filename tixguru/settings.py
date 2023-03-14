@@ -193,12 +193,12 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = env('EMAIL_BACKEND')
+EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_USE_SSL = True
-EMAIL_PORT = 465
-EMAIL_HOST_USER = 'tixvana@gmail.com'
-EMAIL_HOST_PASSWORD = 'dkcfjhkomsvuuyor'
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
 
 SECURE_HSTS_SECONDS = 2,592,000
