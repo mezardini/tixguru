@@ -11,7 +11,10 @@ from django.db.models import Sum
 from django.template.defaultfilters import slugify  
 from django.core.mail import EmailMessage
 from django.core.mail import send_mail
+from django.template import loader, Template
+from django.template.loader import render_to_string
 from django.core import mail
+import jinja2
 from datetime import datetime
 from django.conf import settings
 from sendgrid import SendGridAPIClient
@@ -144,15 +147,14 @@ def profile(request, slug):
     form = OrgForm(request.POST or None, instance=profilex)
 
     if request.method == 'POST':
-        account_number = request.POST.get('phone')
-        account_name = request.POST.get('phone')
-        bank = request.POST.get('phone')
+
+        
         
         org = Organizer.objects.create(
             user = request.user,
             phone = request.POST.get('phone'),
             account_number = request.POST.get('aza_num'),
-            account_name = request.POST.get('aza_name'),
+            account_name = request.POST.get('aza_name').lower(),
             bank = request.POST.get('bank'),
             poster = request.FILES.get('image'),
             slug = slugify(request.POST['user']),
@@ -288,8 +290,27 @@ def bookmarklist(request, pk):
     
 def organizer(request):
     if request.method == 'POST':
+        headers = {
+            'Authorization': env('Bearer'),
+        }
+        account_number = request.POST.get('aza_num')
+        bank_code = request.POST.get('bank')
+
+        response = requests.get('https://api.paystack.co/bank/resolve?account_number='+account_number+'&bank_code='+bank_code, headers=headers)
+        print(response.text)
+
+        data = json.loads(response.text)
+        print(data)
+        x = data.get("data").get("account_name")
+        aza_name = x.lower()
+        account_name = request.POST.get('aza_name').lower()
+
+        if aza_name != account_name:
+            messages.error(request, "Account credentials invalid!.")
+            return render(request, 'org_create.html')
+        
         org = Organizer.objects.create(
-            user = request.user,
+            # user = request.user,
             phone = request.POST.get('phone'),
             account_number = request.POST.get('aza_num'),
             account_name = request.POST.get('aza_name'),
@@ -306,11 +327,16 @@ def organizer(request):
 
 def signup(request):
     if request.method == 'POST':
+        global first_name
         username = request.POST.get('email')
         first_name = request.POST.get('name')
+        global email
         email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
+        global token
+        token =  str(random.randint(100001,999999))
+
         
         if User.objects.filter(email=email).exists():
                 messages.error(request, "User already exists.")
@@ -329,11 +355,71 @@ def signup(request):
                 messages.error(request, "User already exists.")
                 return redirect('signup')
             else:
+                global user
+                template_loader = jinja2.FileSystemLoader('./')
+                template_env = jinja2.Environment(loader=template_loader)
+                html_message = loader.render_to_string(
+                'email.html',
+                {
+                    'user_name': first_name,
+                    'token':   token,
+                  
+                }
+
+                )
+                # context = {'user_name': first_name,'token':   token}
+                # template = template_env.get_template('templates/email.html')
+                # output_text = template.render(context)
+                # send_mail(
+                #     'Ticket booked!!!',
+                #      html_message,
+                #     'tixvana@gmail.com',
+                #     [email],
+                #     fail_silently=False,
+                # )
+                mail = EmailMessage(
+                    "Registered",
+                    html_message,
+                    'settings.EMAIL_HOST_USER',
+                    [email],
+                )
+                mail.fail_silently = False
+                mail.content_subtype = 'html'
+                mail.send()
                 user = User.objects.create_user(username=username,first_name=first_name, password=password1, email=email)
-                return redirect('signin')
+                
+                user.is_active = False
+                user.save()
+                return redirect('verifymail')
 
 
     return render(request, 'register.html')
+
+def verifymail(request):
+    
+    
+    
+
+    
+    if request.method == 'POST':
+        
+        entetoken = request.POST.get('token')
+        entered_token = str(entetoken)
+
+        if entered_token == token:
+            messages.error(request, "Email validated, you can now signin.")
+            user.is_active = True
+            user.save()
+            return redirect('signin')
+
+        else:
+            messages.error(request, "Token incorrect.")
+            user.is_active = False
+            user.save()
+            return redirect('signup')
+
+
+    return render(request, 'verify.html')
 
 def signin(request):
     if request.method == 'POST':
@@ -358,8 +444,8 @@ def signin(request):
             return redirect('organizer')
         else:
             messages.error(request, "Incorrect username or password.")
-            return render(request, 'login.html')
-    return render(request, 'signinx.html')
+            return render(request, 'lsigin.html')
+    return render(request, 'signin.html')
 
 def signout(request):
     logout(request)
@@ -371,37 +457,37 @@ def error_404_view(request, exception):
     # here. The name of our HTML file is 404.html
     return render(request, '404.html')
 
-def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
-     auth_token= env('SECRET_KEY')
-     hed = {'Authorization': 'Bearer ' + auth_token}
-     data = {
-                "tx_ref":''+str((1000 + random.random()*900)),
-                "amount":ticket_price,
-                "currency":"NGN",
-                "redirect_url":"http://localhost:8000/callback",
-                "payment_options":"card",
-                "meta":{
-                    "consumer_id":23,
-                    "consumer_mac":"92a3-912ba-1192a"
-                },
-                "customer":{
-                    "email":tix_mail,
-                    "phonenumber":tix_phone,
-                    "name":tix_name
-                },
-                "customizations":{
-                    "title":"Tixvana",
-                    "description":"Best store in town",
-                    "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
-                }
-                }
-     url = ' https://api.flutterwave.com/v3/payments'
-     response = requests.post(url, json=data, headers=hed)
-     response=response.json()
-     link=response['data']['link']
-    #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
-    #  receiver = tix_mail
-     return link
+# def process_payment(tix_name,tix_mail,ticket_price,tix_phone):
+#      auth_token= env('SECRET_KEY')
+#      hed = {'Authorization': 'Bearer ' + auth_token}
+#      data = {
+#                 "tx_ref":''+str((1000 + random.random()*900)),
+#                 "amount":ticket_price,
+#                 "currency":"NGN",
+#                 "redirect_url":"http://localhost:8000/callback",
+#                 "payment_options":"card",
+#                 "meta":{
+#                     "consumer_id":23,
+#                     "consumer_mac":"92a3-912ba-1192a"
+#                 },
+#                 "customer":{
+#                     "email":tix_mail,
+#                     "phonenumber":tix_phone,
+#                     "name":tix_name
+#                 },
+#                 "customizations":{
+#                     "title":"Tixvana",
+#                     "description":"Best store in town",
+#                     "logo":"https://getbootstrap.com/docs/4.0/assets/brand/bootstrap-solid.svg"
+#                 }
+#                 }
+#      url = ' https://api.flutterwave.com/v3/payments'
+#      response = requests.post(url, json=data, headers=hed)
+#      response=response.json()
+#      link=response['data']['link']
+#     #  message = 'Dear' + tix_name + 'your ticket for event has been booked. Your ticket code is ' + tix_code,
+#     #  receiver = tix_mail
+#      return link
     
 
 @require_http_methods(['GET', 'POST'])

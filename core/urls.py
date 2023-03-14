@@ -17,6 +17,7 @@ urlpatterns = [
     path('organizer', views.organizer, name="organizer"),
     path('signup', views.signup, name="signup"),
     path('signin', views.signin, name="signin"),
+    path('verifymail', views.verifymail, name='verifymail'),
     path('signout', views.signout, name='signout'),
     path('makepayment/<str:slug>', views.makepayment, name='makepayment'),
     path('adminview/<str:slug>', views.admin_details, name='adminview'),

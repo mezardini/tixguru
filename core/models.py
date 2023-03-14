@@ -42,36 +42,36 @@ class Organizer(models.Model):
     Wema_Bank    = '035'
     Zenith_Bank   = '057'
     Code = [
-            (Access_Bank  ,    (Access_Bank)),     
-            (Citibank  ,    (Citibank)) , 
-            (Ecobank    ,    (Ecobank)),   
-            (FCMB     ,    (FCMB))  ,   
-            (Fidelity  ,    (Fidelity)),  
-            (First_Bank,    (First_Bank)), 
-            (GTB  ,    (GTB)), 
-            (Heritage  ,    (Heritage)) , 
-            (Jaiz_Bank,    (Jaiz_Bank)), 
-            (Keystone ,    (Keystone)), 
-            (Parallex ,    (Parallex)), 
-            (Providus ,    (Providus)), 
-            (Stanbic  ,    (Stanbic )), 
-            (Skye_Bank,    (Skye_Bank)), 
-            (Standard_Bank,    (Standard_Bank)), 
-            (Sterling_Bank,    (Sterling_Bank)), 
-            (Suntrust_Bank,    (Suntrust_Bank)), 
-            (Titan_Trust  ,    (Titan_Trust)), 
-            (Union_Bank,    (Union_Bank)),
-            (United_Bank  ,    (United_Bank)), 
-            (Unity_Bank,    (Unity_Bank)),
-            (Wema_Bank,    (Wema_Bank)),
-            (Zenith_Bank  ,    (Zenith_Bank)), 
+            ('044'  ,    ('Access Bank')),     
+            ('023'  ,    ("Citibank")) , 
+            ('050'   ,    ('Ecobank')),   
+            ('214'     ,    ('FCMB'))  ,   
+            ('070'  ,    ('Fidelity')),  
+            ('011',    ('First Bank')), 
+            ('058'  ,    ("GTB")), 
+            ('030'  ,    ('Heritage')) , 
+            ('301'  ,  ('Jaiz Bank')), 
+            ('082' ,    ('Keystone')), 
+            ('526' ,    ('Parallex')), 
+            ('101' ,    ('Providus')), 
+            ('221' ,    ('Stanbic')), 
+            ('076' ,  ('Skye Bank')), 
+            ('068',    ('Standard Bank')), 
+            ('232',    ('Sterling Bank')), 
+            ('100',    ('Suntrust Bank')), 
+            ('102'  ,    ('Titan Trust')), 
+            ('032',    ('Union Bank')),
+            ('033'  ,    ('United Bank')), 
+            ('215',    ('Unity Bank')),
+            ('035' ,   ('Wema Bank')),
+            ('057'  ,    ('Zenith Bank')), 
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20)
     biz_name = models.CharField(max_length=1000,null=True)
     slug = models.SlugField(max_length=500, null=False, unique=True)
     account_number = models.IntegerField(null=True)
-    bank_code = models.IntegerField(choices=Code, null=True)
+    bank_code = models.CharField(choices=Code, null=True, max_length=4)
     account_name = models.CharField(max_length=200,null=True)
 
     def __str__(self):
