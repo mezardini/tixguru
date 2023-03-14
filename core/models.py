@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.template.defaultfilters import slugify  
 from django.urls import reverse
-from hitcount.models import HitCountMixin, HitCount
-from django.contrib.contenttypes.fields import GenericRelation
+
+
 # Create your models here.
 class Category(models.Model):
     name = models.CharField(max_length=50)
