@@ -6,7 +6,7 @@ DEBUG = True
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: update this when you have the production host
-ALLOWED_HOSTS = ['tixvana.onrender.com']
+ALLOWED_HOSTS = ['*']
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
