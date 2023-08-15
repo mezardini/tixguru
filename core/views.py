@@ -43,14 +43,22 @@ def eventCreate(request):
 
 @api_view(['DELETE'])
 def eventDelete(request, pk):
-    event = Event.objects.get(id=pk)
+    try : 
+        event = Event.objects.get(id=pk)
+    except Event.DoesNotExist : 
+        return Response({'error' : f'event with pk {pk} does not exist'})
+
     event.delete()
 
     return Response('Item deleted!')
 
 @api_view(['POST'])
 def eventUpdate(request, pk):
-    event = Event.objects.get(id=pk)
+    try : 
+        event = Event.objects.get(id=pk)
+    except Event.DoesNotExist : 
+        return Response({'error' : f'event with pk {pk} does not exist'})
+
     serializer = EventSerializer(instance=event, data=request.data)
 
     if serializer.is_valid():
