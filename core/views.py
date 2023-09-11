@@ -71,26 +71,41 @@ class EventViewSet(viewsets.ModelViewSet):
 class CreateTicket(generics.CreateAPIView):
     serializer_class = TicketSerializer
 
-    def post(self, request, pk):
-        event = Event.objects.get(id=pk)
-        title = event.title
+    def create(self, request, pk):
+        event = self.get_event(pk)
+        if not event:
+            return Response({'error': 'Event not found.'}, status=status.HTTP_404_NOT_FOUND)
+
         mail = request.data.get("tix_mail")
-        code = "#" + "-" + str(random.randint(1000,123999999))
         name = request.data.get("tix_name")
-        data = {'event':pk, 'tix_mail': mail, 'tix_code':code, 'tix_name':name }
-        serializer = TicketSerializer(data=data)
+        code = self.generate_ticket_code()
+        
+        data = {'event': pk, 'tix_mail': mail, 'tix_code': code, 'tix_name': name}
+        serializer = self.get_serializer(data=data)
+        
         if serializer.is_valid():
-            vote = serializer.save()
-            send_mail(
-                'Ticket booked!!!',
-                'hello ' + name + ' your ticket for the event ' + title +  ' has been booked and your code is ' +  code,
-                'settings.EMAIL_HOST_USER',
-                [mail],
-                fail_silently=False,
-            )
+            serializer.save()
+            self.send_ticket_confirmation(mail, name, event.title, code)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_event(self, event_id):
+        try:
+            return Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return None
+
+    def generate_ticket_code(self):
+        return "#" + "-" + str(random.randint(1000, 123999999))
+
+    def send_ticket_confirmation(self, recipient_email, recipient_name, event_title, ticket_code):
+        subject = 'Ticket booked!!!'
+        message = f'Hello {recipient_name}, your ticket for the event {event_title} has been booked, and your code is {ticket_code}'
+        from_email = 'settings.EMAIL_HOST_USER'  # Replace with your email settings
+        recipient_list = [recipient_email]
+
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
 
 
 #views to get the events created by a user
@@ -114,15 +129,23 @@ class TicketList(generics.ListCreateAPIView):
 class CreateBookmark(generics.CreateAPIView):
     serializer_class = BookmarkSerializer
 
-    def post(self, request, pk):
-        user_ip_address = request.META.get('REMOTE_ADDR')
-        data = {'event':pk, 'creator': user_ip_address }
-        serializer = BookmarkSerializer(data=data)
-        if serializer.is_valid():
-            vote = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, pk):
+        # Get the user's IP address
+        user_ip_address = self.get_user_ip_address(request)
+        
+        # Create the bookmark data
+        bookmark_data = {'event': pk, 'creator': user_ip_address}
+        
+        # Serialize and save the bookmark
+        serializer = self.get_serializer(data=bookmark_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get_user_ip_address(self, request):
+        # Retrieve the user's IP address from the request's META data
+        return request.META.get('REMOTE_ADDR')
 
 #views to get the bookmarks created by an ip
 class BookmarkList(generics.ListCreateAPIView):
