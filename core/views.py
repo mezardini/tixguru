@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from .models import Event, Ticket, Bookmark
 from .serializers import EventSerializer, TicketSerializer, UserSerializer, BookmarkSerializer
@@ -17,7 +19,6 @@ from django.conf import settings
 import random
 
 
-# Create your views here.
 @api_view(['GET'])
 def index(request):
     events = Event.objects.all()
@@ -34,6 +35,8 @@ def eventDetail(request, pk):
 
 @api_view(['POST'])
 def eventCreate(request):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer = EventSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -43,6 +46,8 @@ def eventCreate(request):
 
 @api_view(['DELETE'])
 def eventDelete(request, pk):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     event = Event.objects.get(id=pk)
     event.delete()
 
@@ -50,6 +55,8 @@ def eventDelete(request, pk):
 
 @api_view(['POST'])
 def eventUpdate(request, pk):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     event = Event.objects.get(id=pk)
     serializer = EventSerializer(instance=event, data=request.data)
 
@@ -67,9 +74,11 @@ class EventViewSet(viewsets.ModelViewSet):
 
 
 
-#views to create a ticket
+
 class CreateTicket(generics.CreateAPIView):
     serializer_class = TicketSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, pk):
         event = self.get_event(pk)
@@ -102,20 +111,21 @@ class CreateTicket(generics.CreateAPIView):
     def send_ticket_confirmation(self, recipient_email, recipient_name, event_title, ticket_code):
         subject = 'Ticket booked!!!'
         message = f'Hello {recipient_name}, your ticket for the event {event_title} has been booked, and your code is {ticket_code}'
-        from_email = 'settings.EMAIL_HOST_USER'  # Replace with your email settings
+        from_email = 'settings.EMAIL_HOST_USER'  
         recipient_list = [recipient_email]
 
         send_mail(subject, message, from_email, recipient_list, fail_silently=False)
 
 
-#views to get the events created by a user
+
 class EventList(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = Event.objects.filter(creator_id=self.kwargs["pk"])
         return queryset
 
     serializer_class = EventSerializer
-#views to get the tickets sold a user
+
+
 class TicketList(generics.ListCreateAPIView):
 
     def get_queryset(self):
@@ -125,18 +135,20 @@ class TicketList(generics.ListCreateAPIView):
     
     serializer_class = TicketSerializer
 
-#views to create a bookmark
+
 class CreateBookmark(generics.CreateAPIView):
     serializer_class = BookmarkSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, pk):
-        # Get the user's IP address
+        
         user_ip_address = self.get_user_ip_address(request)
         
-        # Create the bookmark data
+        
         bookmark_data = {'event': pk, 'creator': user_ip_address}
         
-        # Serialize and save the bookmark
+        
         serializer = self.get_serializer(data=bookmark_data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -144,10 +156,10 @@ class CreateBookmark(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get_user_ip_address(self, request):
-        # Retrieve the user's IP address from the request's META data
+        
         return request.META.get('REMOTE_ADDR')
 
-#views to get the bookmarks created by an ip
+
 class BookmarkList(generics.ListCreateAPIView):
 
     
